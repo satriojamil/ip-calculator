@@ -1,4 +1,5 @@
 # Input The IP Address and Prefix 
+print("Anggota Kelompok : Jamil, Sabda, Radit")
 print("============================================")
 inputSubnet = int(input("Input Netmask = "))    # Input The IP Address
 inputIP = input("Input IP Address = ")          # Input The Prefix
