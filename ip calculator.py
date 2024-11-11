@@ -1,4 +1,10 @@
 from datetime import datetime
+import os
+current_directory = os.path.dirname(os.path.abspath(__file__))
+os.chdir(current_directory)
+current_directory = os.getcwd()
+print(f"Current directory {current_directory}")
+
 
 def save_calculation(ip_address, netmask, results):
     """Save calculation results to a text file"""
@@ -13,6 +19,10 @@ def save_calculation(ip_address, netmask, results):
         for key, value in results.items():
             f.write(f"{key}: {value}\n")
         f.write("="*50 + "\n")
+
+def clear_history():
+    f = open('ip_calc_history.txt', 'w')
+    f.write('')
 
 def view_history():
     """Display calculation history"""
@@ -30,17 +40,25 @@ def get_user_input():
         print("1. Calculate new IP")
         print("2. View history")
         print("3. Exit")
-        choice = input("Enter your choice (1-3): ")
+        print("4. Clear History")
+        choice = input("Enter your choice (1-4): ")
         
         if choice == '1':
             print("============================================")
             netmask = int(input("Input Netmask = "))
             ip_address = input("Input IP Address = ")
-            return netmask, ip_address
+            if ip_address.count('.') != 3 or len(ip_address) > 15:
+                netmask = int(input("Input Netmask = "))
+                ip_address = input("Input IP Address = ")
+                return netmask, ip_address
+            else:
+                return netmask, ip_address
         elif choice == '2':
             view_history()
         elif choice == '3':
             exit()
+        elif choice == "4":
+            clear_history()
         else:
             print("Invalid choice. Please try again.")
 
