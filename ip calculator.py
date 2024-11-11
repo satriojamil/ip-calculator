@@ -1,32 +1,64 @@
+from datetime import datetime
+
+def save_calculation(ip_address, netmask, results):
+    """Save calculation results to a text file"""
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    with open('ip_calc_history.txt', 'a') as f:
+        f.write("\n" + "="*50 + "\n")
+        f.write(f"Time: {timestamp}\n")
+        f.write(f"IP Address: {ip_address}\n")
+        f.write(f"Netmask: {netmask}\n")
+        f.write("Results:\n")
+        for key, value in results.items():
+            f.write(f"{key}: {value}\n")
+        f.write("="*50 + "\n")
+
+def view_history():
+    """Display calculation history"""
+    try:
+        with open('ip_calc_history.txt', 'r') as f:
+            print("\n============= Calculation History =============")
+            print(f.read())
+    except FileNotFoundError:
+        print("\nNo calculation history found.")
+
 # Input The IP Address and Prefix 
-print("============================================")
-inputSubnet = int(input("Input Netmask = "))    # Input The IP Address
-inputIP = input("Input IP Address = ")          # Input The Prefix
-print("============================================")
+def get_user_input():
+    while True:
+        print("\n============================================")
+        print("1. Calculate new IP")
+        print("2. View history")
+        print("3. Exit")
+        choice = input("Enter your choice (1-3): ")
+        
+        if choice == '1':
+            print("============================================")
+            netmask = int(input("Input Netmask = "))
+            ip_address = input("Input IP Address = ")
+            return netmask, ip_address
+        elif choice == '2':
+            view_history()
+        elif choice == '3':
+            exit()
+        else:
+            print("Invalid choice. Please try again.")
 
 #Function for Sum IP Address
 def sumIP(x):
     jumlahIP = 2**(32-x)
     return jumlahIP
 
-# Function for Calculate The Subnetmask Class 'C' like 255.255.255.0 --> /24
-def subnetmaskC(x):
+# Function for Calculate The Subnetmask like 255.255.255.0 --> /24
+def subnetting(x):
     subnetmask = 256 - x
-    return f'Subnetmask      = 255.255.255.{subnetmask}'
-
-# Function for Calculate The Subnetmask Class 'B' like 255.255.0.0 --> /16
-def subnetmaskB(x):
-    prefix = inputSubnet + 8
-    subnetmask = 256 - (sumIP(prefix))
-    return f'Subnetmask      = 255.255.{subnetmask}.0'
-
+    return f'255.255.255.{subnetmask}'
 
 # Function for Calculate Network Address from The Particular Network
-def networkIP(x):
+def network_broadcast_IP(x, jumlahIP):
     Networks = x.split('.')
     Network = int(Networks[3])
-    sumip = sumIP(inputSubnet)
-    if Network < sumip:
+    if Network < jumlahIP:
         Networks.insert(3,0)
         Networks.pop()
         octetNet = ""
@@ -34,31 +66,27 @@ def networkIP(x):
             octetNet += (str(i) + '.')
         return octetNet[:-1]
     else:
-        operation = (int(Networks[3]) // sumip) * sumip
+        operation = (int(Networks[3]) // jumlahIP) * jumlahIP
         Networks.insert(3,operation)
         Networks.pop()
         octetNet = ""
         for i in Networks:
             octetNet += (str(i) + '.')
         return octetNet[:-1]
-network = networkIP(inputIP)
-
 
 # Function for Calculate Broadcast Address from The Particular Network
-def broadcastIP(x):
+def broadcastIP(x, jumlahIP):
     Network = x.split('.')
     Networks = int(Network[3])
-    sumip = sumIP(inputSubnet)
-    Broadcast = Networks + sumip - 1
+    Broadcast = Networks + jumlahIP - 1
     Network.insert(3,Broadcast)
     Network.pop()
     octetBroad = ''
     for i in Network:
         octetBroad += (str(i) + '.')
     return octetBroad[:-1]
-broadcast = broadcastIP(network)
 
-def rangeIP(first,last):
+def rangeIP(first, last):
     firstRange = first.split('.')
     lastRange = last.split('.')
 
@@ -79,26 +107,40 @@ def rangeIP(first,last):
     for i in lastRange:
         lastRangeHost += (str(i) + '.')
 
-    return f"Range IP = {first} - {last}\nRange Host = {firstRangeHost[:-1]} - {lastRangeHost[:-1]}"
-RangeIP = rangeIP(network,broadcast)
+    return {
+        'full_range': f"{first} - {last}",
+        'host_range': f"{firstRangeHost[:-1]} - {lastRangeHost[:-1]}"
+    }
 
-# Start The Calculate 
-if inputSubnet >= 24:
-    jumlahIP = sumIP(inputSubnet)
-    subnet = subnetmaskC(jumlahIP)
-else:
-    subnet = subnetmaskB(inputSubnet)
-
-
-# The Main Function That Print The Result of Calculate
 def main():
-    print("\n============================================")
-    print(f"Total IP        = {jumlahIP}")
-    print(subnet)
-    print(network)
-    print(broadcast)
-    print(RangeIP)
-    print("============================================")
+    while True:
+        netmask, ip_address = get_user_input()
+        
+        # Calculate results
+        jumlahIP = sumIP(netmask)
+        subnet = subnetting(jumlahIP)
+        network = network_broadcast_IP(ip_address, jumlahIP)
+        broadcast = broadcastIP(network, jumlahIP)
+        range_ips = rangeIP(network, broadcast)
+        
+        # Prepare results dictionary
+        results = {
+            'Total IP': jumlahIP,
+            'Subnetmask': subnet,
+            'Network Address': network,
+            'Broadcast Address': broadcast,
+            'Range IP': range_ips['full_range'],
+            'Range Host': range_ips['host_range']
+        }
+        
+        # Display results
+        print("\n============================================")
+        for key, value in results.items():
+            print(f"{key}: {value}")
+        print("============================================")
+        
+        # Save calculation to history
+        save_calculation(ip_address, netmask, results)
 
-# Run Result Function
-main()
+if __name__ == "__main__":
+    main()
